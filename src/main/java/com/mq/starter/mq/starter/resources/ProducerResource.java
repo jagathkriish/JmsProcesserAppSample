@@ -8,6 +8,7 @@ import org.springframework.jms.core.MessagePostProcessor;
 import org.springframework.jms.support.JmsHeaders;
 import org.springframework.messaging.handler.annotation.Header;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -29,7 +30,7 @@ public class ProducerResource {
     @Autowired
     private Queue reqQueue;
 
-    @JmsListener(destination = "standalone.request", containerFactory = "jmsFactory1")
+    /* @JmsListener(destination = "standalone.request", containerFactory = "jmsFactory1")
     public void consume(String msg, @Header(JmsHeaders.CORRELATION_ID) String corrId) throws InterruptedException {
 
         Thread.sleep(3000);
@@ -61,6 +62,29 @@ public class ProducerResource {
                     new CorrelationIdPostProcessor(corrId));
             System.out.println("Got a message from Server2 and republished to response queue of server2 ---> "+msg+"  "+corrId);
         }
+    } */
+
+    @JmsListener(destination = "standalone.request", containerFactory = "jmsFactory1")
+    public void consume(String msg, @Header(JmsHeaders.CORRELATION_ID) String corrId) throws InterruptedException {
+        int rand  = new Random().nextInt(5);
+        System.out.println(rand+"  is the random sleep value");
+        TimeUnit.SECONDS.sleep(rand);
+
+            jmsTemplate.convertAndSend(resQueue, msg,
+                    new CorrelationIdPostProcessor(corrId));
+            System.out.println("Got a message from Server1 and republished to response queue of server1 ---> "+msg+"  "+corrId);
+    }
+
+    @JmsListener(destination = "standalone.request", containerFactory = "jmsFactory2")
+    public void consumeServer2(String msg, @Header(JmsHeaders.CORRELATION_ID) String corrId) throws InterruptedException {
+
+        int rand  = new Random().nextInt(5);
+        System.out.println(rand+"  is the random sleep value");
+        TimeUnit.SECONDS.sleep(rand);
+
+            jmsTemplate2.convertAndSend(resQueue, msg,
+                    new CorrelationIdPostProcessor(corrId));
+            System.out.println("Got a message from Server2 and republished to response queue of server2 ---> "+msg+"  "+corrId);
     }
 
     private class CorrelationIdPostProcessor implements MessagePostProcessor {
